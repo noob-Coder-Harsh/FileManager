@@ -2,10 +2,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_manager/file_manager.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:project1/videoplayer.dart';
+
+import 'imageviewer.dart';
 
 class FileManagerPage extends StatefulWidget {
-  const FileManagerPage({super.key, required this.title});
-  final String title;
+  const FileManagerPage({super.key});
 
   @override
   State<FileManagerPage> createState() => _FileManagerPageState();
@@ -16,58 +18,89 @@ class _FileManagerPageState extends State<FileManagerPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          await requestStoragePermission();
-        },
-        label: const Text("Request File Access Permission"),
-      ),
-      appBar: appBar(context),
-      body: FileManager(
-        controller: controller, // Make sure controller is properly initialized
-        builder: (context, snapshot) {
-          final List<FileSystemEntity> entities = snapshot;
-          return ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 0),
-            itemCount: entities.length,
-            itemBuilder: (context, index) {
-              FileSystemEntity entity = entities[index];
-              return Card(
-                child: ListTile(
-                  onTap: () {
-                    if (FileManager.isDirectory(entity)) {
-                      controller.openDirectory(entity);
-                    } else {
-                      // Handle file tap
-                    }
-                  },
-                  leading: FileManager.isFile(entity)
-                      ? const Icon(Icons.feed_outlined)
-                      : const Icon(Icons.folder),
-                  title: Text(FileManager.basename(
-                    entity,
-                    showFileExtension: true,
-                  )),
-                  subtitle: subTitle(entity),
-                ),
-              );
-            },
-          );
-        },
+    return SafeArea(
+      child: Scaffold(
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () async {
+            await requestStoragePermission();
+          },
+          label: const Text("File Access"),
+        ),
+        appBar: appBar(context),
+        body: FileManager(
+          controller: controller, // Make sure controller is properly initialized
+          builder: (context, snapshot) {
+            final List<FileSystemEntity> entities = snapshot;
+            return ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 0),
+              itemCount: entities.length,
+              itemBuilder: (context, index) {
+                FileSystemEntity entity = entities[index];
+                return Card(
+                  child: ListTile(
+                    splashColor: Theme.of(context).colorScheme.primaryContainer,
+                    onTap: () {
+                      if (FileManager.isDirectory(entity)) {
+                        controller.openDirectory(entity);
+                      } else {
+                        // Handle file tap
+                        String filePath = entity.absolute.path;
+                        if (FileManager.isFile(entity)) {
+                          // Check if the file is an image or video
+                          if (filePath.endsWith('.jpeg') ||
+                              filePath.endsWith('.jpeg') ||
+                              filePath.endsWith('.png') ||
+                              filePath.endsWith('.gif') ||
+                              filePath.endsWith('.bmp')) {
+                            // Handle image
+                            // You can open the image using any image viewer or widget
+                            Navigator.push(context, MaterialPageRoute(builder: (context)=>ImageViewer(imagePath: filePath)));
+                          } else if (filePath.endsWith('.mp4') ||
+                              filePath.endsWith('.avi') ||
+                              filePath.endsWith('.mov') ||
+                              filePath.endsWith('.mkv')) {
+                            // Handle video
+                            // You can open the video using any video player or widget
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => VideoPlayerWidget(videoPath: filePath)));
+                          } else {
+                            // Handle other file types
+                            // You can open or handle other types of files here
+                          }
+                        }
+                      }
+
+                    },
+                    leading: FileManager.isFile(entity)
+                        ? const Icon(Icons.feed_outlined)
+                        :  Icon(Icons.folder_copy_outlined,color: Theme.of(context).colorScheme.primary,),
+                    title: Text(FileManager.basename(
+                      entity,
+                      showFileExtension: true,
+                    ),style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                      color: Theme.of(context).colorScheme.secondary,
+                      fontWeight: FontWeight.bold
+                    ),),
+                    subtitle: subTitle(entity),
+                  ),
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }
 
   appBar(BuildContext context) {
     return AppBar(
+      backgroundColor: Theme.of(context).colorScheme.primary,
       actions: [
         IconButton(
             onPressed: () => createFolder(context),
-            icon: const Icon(Icons.create_new_folder_outlined)),
-        IconButton(onPressed: () => sort(context), icon: const Icon(Icons.sort_rounded)),
+            icon: Icon(Icons.create_new_folder_outlined,color: Theme.of(context).colorScheme.onBackground,)),
+        IconButton(onPressed: () => sort(context), icon: Icon(Icons.sort_rounded,color: Theme.of(context).colorScheme.onBackground,)),
         IconButton(
-            onPressed: ()=> selectStorage(context), icon: const Icon(Icons.sd_storage_rounded)),
+            onPressed: ()=> selectStorage(context), icon: Icon(Icons.sd_storage_rounded,color: Theme.of(context).colorScheme.onBackground,)),
       ],
       title: ValueListenableBuilder(
         valueListenable: controller.titleNotifier,
@@ -216,7 +249,9 @@ subTitle(FileSystemEntity entity) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Size: $formattedSize'),
+            Text('Size: $formattedSize',style: Theme.of(context).textTheme.bodySmall!.copyWith(
+              color: Theme.of(context).colorScheme.onBackground
+            ),),
             Text('Modified: $modified'),
           ],
         );

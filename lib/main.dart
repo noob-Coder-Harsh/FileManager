@@ -14,9 +14,9 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'File Manager App',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        colorSchemeSeed: Colors.blue
       ),
-      home: FileManagerPage(title: '',),
+      home: const FileManagerPage(),
     );
   }
 }
